@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using VideoSummarizer.Helpers;
+using VideoSummarizer.Models;
 using VideoSummarizer.Models.FileApi;
 
 namespace VideoSummarizer.Controllers
@@ -12,8 +13,12 @@ namespace VideoSummarizer.Controllers
         public async Task<ObjectResult> GetSummaryAsync(string videoPageUrl)
         {
             FileApiResponse fileInfo = await FileInfoProvider.Instance.GetFileInfoAsync(videoPageUrl);
+            using (Stream videoStream = await VideoDownloader.Instance.GetVideoStreamAsync(fileInfo.Media.DefaultFileSource.Url))
+            {
+                SpeechToTextResponse speechToTextResponse = await WhisperHelper.Instance.SpeechToText(videoStream);
 
-            return Ok(fileInfo.Media.ThumbnailUrl);
+                return Ok(speechToTextResponse.Text);
+            }
         }
     }
 }
